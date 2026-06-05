@@ -1,6 +1,0 @@
-Options -Indexes
-DirectoryIndex frontend/index.html index.php index.html
-
-# Redirect root to frontend
-RewriteEngine On
-RewriteRule ^$ frontend/index.html [L]

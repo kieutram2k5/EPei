@@ -1,89 +1,73 @@
 /* ============================================
-   EPei - api.js  v2.0
+   EPei - api.js  v4.0 — Node.js backend
    ============================================ */
 'use strict';
 
-// Detect API base path — works for both:
-// http://localhost/EPei/index.html  → /EPei/backend/api
-// http://localhost/EPei/frontend/index.html → /EPei/backend/api
-const API_BASE = (function() {
-  const parts = window.location.pathname.split('/').filter(Boolean);
-  // parts[0] is always the project folder: 'EPei'
-  if (parts.length >= 1) {
-    return '/' + parts[0] + '/backend/api';
-  }
-  return '/EPei/backend/api';
-})();
+// Node server chạy port 3000
+const API_BASE = 'http://localhost:3000/api';
 
 async function apiCall(endpoint, method = 'GET', data = null) {
-  const options = {
+  const opts = {
     method,
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
   };
-  if (data && method !== 'GET') {
-    options.body = JSON.stringify(data);
-  }
+  if (data && method !== 'GET') opts.body = JSON.stringify(data);
+
   try {
-    const res  = await fetch(endpoint, options);
+    const res  = await fetch(endpoint, opts);
     const text = await res.text();
-
-    if (!text.trim()) {
-      console.error('Empty response from:', endpoint);
-      return { success: false, message: 'Server trả về rỗng' };
+    if (!text.trim()) return { success: false, message: 'Server trả về rỗng' };
+    if (text[0] !== '{' && text[0] !== '[') {
+      console.error('Non-JSON:', text.slice(0, 200));
+      return { success: false, message: 'Lỗi server. Xem console.' };
     }
-
-    // Check for PHP errors/warnings before JSON
-    if (text.trim()[0] !== '{' && text.trim()[0] !== '[') {
-      console.error('Non-JSON response from:', endpoint, '\n', text.substring(0, 300));
-      return { success: false, message: 'Lỗi server PHP. Xem Console để biết chi tiết.' };
-    }
-
-    try {
-      return JSON.parse(text);
-    } catch (e) {
-      console.error('JSON parse error:', e, '\nResponse:', text.substring(0, 300));
-      return { success: false, message: 'Lỗi parse JSON từ server' };
-    }
-  } catch (err) {
-    console.error('Fetch error for', endpoint, ':', err);
-    return { success: false, message: 'Không kết nối được server. Kiểm tra XAMPP đang chạy.' };
+    return JSON.parse(text);
+  } catch (e) {
+    console.error('Fetch error:', e);
+    return { success: false, message: 'Không kết nối được server. Hãy chạy: node server.js' };
   }
 }
 
 const API = {
   /* Auth */
-  login:    d  => apiCall(`${API_BASE}/auth.php?action=login`,    'POST', d),
-  register: d  => apiCall(`${API_BASE}/auth.php?action=register`, 'POST', d),
-  logout:   () => apiCall(`${API_BASE}/auth.php?action=logout`,   'POST'),
-  getMe:    () => apiCall(`${API_BASE}/auth.php?action=me`),
+  login:    d  => apiCall(`${API_BASE}/auth/login`,    'POST', d),
+  register: d  => apiCall(`${API_BASE}/auth/register`, 'POST', d),
+  logout:   () => apiCall(`${API_BASE}/auth/logout`,   'POST'),
+  getMe:    () => apiCall(`${API_BASE}/auth/me`),
 
   /* Products */
-  getProducts:   (cat='') => apiCall(`${API_BASE}/products.php?action=list&category=${encodeURIComponent(cat)}`),
-  getProduct:    id       => apiCall(`${API_BASE}/products.php?action=get&id=${id}`),
-  createProduct: d        => apiCall(`${API_BASE}/products.php?action=create`, 'POST', d),
-  updateProduct: (id, d)  => apiCall(`${API_BASE}/products.php?action=update&id=${id}`, 'POST', d),
-  deleteProduct: id       => apiCall(`${API_BASE}/products.php?action=delete&id=${id}`, 'POST'),
+  getProducts:   (cat='') => apiCall(`${API_BASE}/products${cat && cat!=='all' ? '?category='+encodeURIComponent(cat) : ''}`),
+  getProduct:    id       => apiCall(`${API_BASE}/products/${id}`),
+  createProduct: d        => apiCall(`${API_BASE}/products`,   'POST', d),
+  updateProduct: (id, d)  => apiCall(`${API_BASE}/products/${id}`, 'PUT',  d),
+  deleteProduct: id       => apiCall(`${API_BASE}/products/${id}`, 'DELETE'),
 
   /* Orders */
-  createOrder:     d            => apiCall(`${API_BASE}/orders.php?action=create`, 'POST', d),
-  getOrders:       (s='',st='') => apiCall(`${API_BASE}/orders.php?action=list&search=${encodeURIComponent(s)}&status=${st}`),
-  getMyOrders:     ()           => apiCall(`${API_BASE}/orders.php?action=my`),
-  getOrder:        id           => apiCall(`${API_BASE}/orders.php?action=get&id=${encodeURIComponent(id)}`),
-  updateOrderStatus:(id,status) => apiCall(`${API_BASE}/orders.php?action=update_status&id=${encodeURIComponent(id)}`, 'POST', {status}),
+  createOrder:      d          => apiCall(`${API_BASE}/orders`,         'POST', d),
+  getOrders:        (s='',st='')=> apiCall(`${API_BASE}/orders?search=${encodeURIComponent(s)}&status=${st}`),
+  getMyOrders:      ()          => apiCall(`${API_BASE}/orders/mine`),
+  getOrder:         id          => apiCall(`${API_BASE}/orders/${encodeURIComponent(id)}`),
+  updateOrderStatus:(id, status)=> apiCall(`${API_BASE}/orders/${encodeURIComponent(id)}/status`, 'PATCH', { status }),
+  confirmPayment:   id          => apiCall(`${API_BASE}/orders/${encodeURIComponent(id)}/payment`, 'PATCH'),
 
   /* Messages */
-  sendMessage:     d  => apiCall(`${API_BASE}/messages.php?action=send`, 'POST', d),
-  getMessages:     () => apiCall(`${API_BASE}/messages.php?action=list`),
-  markMessageRead: id => apiCall(`${API_BASE}/messages.php?action=read&id=${id}`, 'POST'),
+  sendMessage:     d  => apiCall(`${API_BASE}/messages`,        'POST', d),
+  getMessages:     () => apiCall(`${API_BASE}/messages`),
+  markMessageRead: id => apiCall(`${API_BASE}/messages/${id}/read`, 'PATCH'),
 
   /* Payment */
-  getPaymentInfo:   ()  => apiCall(`${API_BASE}/payment.php?action=get`),
-  updatePaymentInfo: d  => apiCall(`${API_BASE}/payment.php?action=update`, 'POST', d),
-  confirmPayment:   id  => apiCall(`${API_BASE}/payment.php?action=confirm&order_id=${encodeURIComponent(id)}`, 'POST'),
+  getPaymentInfo:    () => apiCall(`${API_BASE}/payment`),
+  updatePaymentInfo:  d => apiCall(`${API_BASE}/payment`, 'PUT', d),
+  confirmPaymentById:id => apiCall(`${API_BASE}/payment/confirm/${encodeURIComponent(id)}`, 'PATCH'),
 
   /* Users */
-  getUsers:      () => apiCall(`${API_BASE}/users.php?action=list`),
-  updateProfile: d  => apiCall(`${API_BASE}/users.php?action=update_profile`, 'POST', d),
-  getStats:      () => apiCall(`${API_BASE}/users.php?action=stats`),
+  getUsers:      () => apiCall(`${API_BASE}/users`),
+  updateProfile:  d => apiCall(`${API_BASE}/users/profile`, 'PATCH', d),
+  getStats:      () => apiCall(`${API_BASE}/users/stats`),
+
+  /* Upload */
+  uploadQrImage: (formData) => fetch(`${API_BASE}/upload/qr`, {
+    method: 'POST', credentials: 'include', body: formData,
+  }).then(r => r.json()).catch(e => ({ success: false, message: e.message })),
 };
