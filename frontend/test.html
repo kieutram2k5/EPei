@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>EPei - Test Products</title>
+<style>
+  body{font-family:sans-serif;padding:20px;background:#f0f4f0}
+  pre{background:#fff;padding:16px;border-radius:8px;overflow:auto;font-size:12px}
+  .ok{color:green;font-weight:bold}
+  .err{color:red;font-weight:bold}
+  .card{background:#fff;border-radius:12px;padding:16px;margin:8px;display:inline-block;width:200px;vertical-align:top;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+  h3{color:#4A7C59}
+</style>
+</head>
+<body>
+<h2>🔍 EPei Product Test</h2>
+<div id="status">Đang test...</div>
+<div id="products"></div>
+<pre id="raw"></pre>
+
+<script>
+const API_BASE = '/EPei/backend/api';
+
+async function test() {
+  const status = document.getElementById('status');
+  const raw    = document.getElementById('raw');
+  const grid   = document.getElementById('products');
+
+  try {
+    const res  = await fetch(API_BASE + '/products.php?action=list', { credentials: 'include' });
+    const text = await res.text();
+    raw.textContent = 'HTTP ' + res.status + '\n\n' + text.substring(0, 500);
+
+    let data;
+    try { data = JSON.parse(text); }
+    catch(e) {
+      status.innerHTML = '<span class="err">❌ JSON parse error: ' + e.message + '</span>';
+      return;
+    }
+
+    if (!data.success) {
+      status.innerHTML = '<span class="err">❌ API error: ' + data.message + '</span>';
+      return;
+    }
+
+    status.innerHTML = '<span class="ok">✅ ' + data.data.length + ' sản phẩm tải thành công!</span>';
+
+    grid.innerHTML = data.data.map(p => `
+      <div class="card">
+        <div style="background:linear-gradient(135deg,#1e3a1e,#4A7C59);height:80px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:10px">
+          <i class="${p.icon}" style="color:rgba(255,255,255,0.7);font-size:2rem"></i>
+        </div>
+        <strong style="font-size:0.85rem">${p.name}</strong><br>
+        <span style="color:#4A7C59;font-weight:bold">${Number(p.price).toLocaleString('vi-VN')}đ</span><br>
+        <small style="color:#6B705C">${p.category}</small>
+      </div>`).join('');
+
+  } catch(e) {
+    status.innerHTML = '<span class="err">❌ Fetch error: ' + e.message + '</span>';
+    raw.textContent = e.stack;
+  }
+}
+
+test();
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</body>
+</html>
