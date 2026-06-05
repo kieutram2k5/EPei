@@ -1,0 +1,8 @@
+node_modules/
+.env
+.env.local
+frontend/uploads/qr/*.png
+frontend/uploads/qr/*.jpg
+frontend/uploads/qr/*.webp
+.dist/
+*.log

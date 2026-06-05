@@ -47,15 +47,15 @@ async function runTests() {
     : err('products: ' + JSON.stringify(r.data));
 
   // 3. Login admin
-  r = await req('POST', '/api/auth/login', { email: 'admin@epei.vn', password: 'admin123' });
+  r = await req('POST', '/api/auth?action=login', { email: 'admin@epei.vn', password: 'admin123' });
   r.data?.success && r.data.user?.role === 'admin'
-    ? ok('POST /api/auth/login — admin OK')
+    ? ok('POST /api/auth?action=login — admin OK token:' + (r.data.token ? 'YES' : 'NO'))
     : err('login admin: ' + JSON.stringify(r.data));
 
   // 4. Login user
-  r = await req('POST', '/api/auth/login', { email: 'user@epei.vn', password: 'user123' });
+  r = await req('POST', '/api/auth?action=login', { email: 'user@epei.vn', password: 'user123' });
   r.data?.success
-    ? ok(`POST /api/auth/login — ${r.data.user?.name} OK`)
+    ? ok(`POST /api/auth?action=login — ${r.data.user?.name} OK`)
     : err('login user: ' + JSON.stringify(r.data));
 
   // 5. Payment
