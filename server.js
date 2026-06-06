@@ -1,8 +1,8 @@
 'use strict';
 /**
- * EPei - server.js  v3.0
- * Local dev: node server.js → http://localhost:3000
- * Production: Vercel (dùng /api/*.js serverless functions)
+ * EPei - server.js
+ * Local: node server.js → http://localhost:3000
+ * Deploy: Render.com
  */
 const express = require('express');
 const path    = require('path');
@@ -39,18 +39,18 @@ function wrap(fn) {
   });
 }
 
-app.all('/api/auth',       wrap(require('./api/auth')));
-app.all('/api/auth/*path', wrap(require('./api/auth')));
-app.all('/api/products',       wrap(require('./api/products')));
-app.all('/api/products/*path', wrap(require('./api/products')));
-app.all('/api/orders',       wrap(require('./api/orders')));
-app.all('/api/orders/*path', wrap(require('./api/orders')));
-app.all('/api/messages',       wrap(require('./api/messages')));
-app.all('/api/messages/*path', wrap(require('./api/messages')));
+app.all('/api/auth',          wrap(require('./api/auth')));
+app.all('/api/auth/*',        wrap(require('./api/auth')));
+app.all('/api/products',      wrap(require('./api/products')));
+app.all('/api/products/*',    wrap(require('./api/products')));
+app.all('/api/orders',        wrap(require('./api/orders')));
+app.all('/api/orders/*',      wrap(require('./api/orders')));
+app.all('/api/messages',      wrap(require('./api/messages')));
+app.all('/api/messages/*',    wrap(require('./api/messages')));
 app.all('/api/payment',       wrap(require('./api/payment')));
-app.all('/api/payment/*path', wrap(require('./api/payment')));
-app.all('/api/users',       wrap(require('./api/users')));
-app.all('/api/users/*path', wrap(require('./api/users')));
+app.all('/api/payment/*',     wrap(require('./api/payment')));
+app.all('/api/users',         wrap(require('./api/users')));
+app.all('/api/users/*',       wrap(require('./api/users')));
 
 // Upload (multer — cần handle khác vì không phải serverless)
 const multer  = require('multer');
@@ -91,8 +91,8 @@ app.post('/api/upload', (req, res) => {
   });
 });
 
-// SPA fallback
-app.get('/{*path}', (_req, res) =>
+// SPA fallback — Express v4 syntax
+app.get('*', (_req, res) =>
   res.sendFile(path.join(frontendDir, 'index.html'))
 );
 
