@@ -214,6 +214,7 @@ function initParallax() {
 /* ── Hover tilt on cards ─────────────────────────────────────────────────── */
 function initCardTilt() {
   document.addEventListener('mousemove', e => {
+    if (!e.target || typeof e.target.closest !== 'function') return;
     const card = e.target.closest('.product-card, .feature-card, .tech-card');
     if (!card) return;
     const rect = card.getBoundingClientRect();
@@ -222,6 +223,7 @@ function initCardTilt() {
     card.style.transform = `translateY(-8px) rotateX(${-y * 6}deg) rotateY(${x * 6}deg)`;
   });
   document.addEventListener('mouseleave', e => {
+    if (!e.target || typeof e.target.closest !== 'function') return;
     const card = e.target.closest('.product-card, .feature-card, .tech-card');
     if (card) card.style.transform = '';
   }, true);
